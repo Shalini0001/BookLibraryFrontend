@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "886321569088",
+    "project_id": "domatobook-7530f",
+    "storage_bucket": "domatobook-7530f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:886321569088:android:c379ba846caf54fe4a6ea5",
+        "android_client_info": {
+          "package_name": "com.domatobook"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQk2hT9zbiGMviGkQBgMDrBHMuL8IQU2w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
