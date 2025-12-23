@@ -20,7 +20,6 @@ const PaymentScreen = ({ navigation }) => {
     try {
       const token = await AsyncStorage.getItem('token');
 
-      // 1. Call Backend to Create Mock Order
       const orderRes = await fetch(ENDPOINTS.CREATE_ORDER, {
         method: 'POST',
         headers: {
@@ -34,7 +33,6 @@ const PaymentScreen = ({ navigation }) => {
 
       console.log('Mock Order Created:', orderData.id);
 
-      // 2. Call Backend to Verify & Activate (Mocking the success callback)
       const verifyRes = await fetch(ENDPOINTS.VERIFY_PAYMENT, {
         method: 'POST',
         headers: {
@@ -51,7 +49,6 @@ const PaymentScreen = ({ navigation }) => {
       const verifyData = await verifyRes.json();
 
       if (verifyData.success) {
-        // 3. Update Global Context UI
         activateSubscription(); 
 
         Alert.alert('Success', 'Subscription activated successfully (Mock Mode)');

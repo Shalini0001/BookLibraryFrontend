@@ -3,69 +3,58 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, ActivityIndi
 import { AuthContext } from '../../context/AuthContext';
 import { SubscriptionContext } from '../../context/SubscriptionContext';
 import { ENDPOINTS } from '../../utils/constants';
-
-const BOOKS = [
-  {
-    id: '1',
-    title: 'Atomic Habits',
-    image: require('../../assets/images/atomichabit.png')
-  },
-  {
-    id: '2',
-    title: 'Deep Work',
-    image: require('../../assets/images/deepwork.png')
-  },
-  {
-    id: '3',
-    title: 'Rich Dad Poor Dad',
-    image: require('../../assets/images/richdad.png')
-  },
-  {
-    id: '4',
-    title: 'Think Like a Monk',
-    image: require('../../assets/images/thinklikemonk.png')
-  }
-];
+import { getFcmToken, listenForegroundNotifications, requestNotificationPermission } from '../../services/notificationService';
 
 const HomeScreen = ({ navigation }) => {
-  const { user } = useContext(AuthContext);
-  const { subscription } = useContext(SubscriptionContext);
+  const { user, logout } = useContext(AuthContext); 
+  const { subscription, fetchSubscription } = useContext(SubscriptionContext);
 
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const { fetchStatus } = useContext(SubscriptionContext); // Get the fetch function
 
+  useEffect(() => {
+    const setupNotifications = async () => {
+      const hasPermission = await requestNotificationPermission();
+      if (hasPermission) {
+        await getFcmToken();
+      }
+    };
+    setupNotifications();
+    const unsubscribe = listenForegroundNotifications();
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     fetchBooks();
   }, []);
 
-
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchBooks();   // Refresh books list
-    await fetchStatus();  // Hit the status API again
+    await Promise.all([fetchBooks(), fetchSubscription()]);
     setRefreshing(false);
   };
 
-  const fetchBooks = async () => {
-    try {
-      const response = await fetch(ENDPOINTS.GET_BOOKS);
-      const data = await response.json();
-      setBooks(data);
-    } catch (error) {
-      console.error("Error fetching books:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+const fetchBooks = async () => {
+  try {
+    const response = await fetch(ENDPOINTS.GET_BOOKS);
+    const data = await response.json();
+
+    setBooks(data); 
+
+  } catch (error) {
+    console.error("Error fetching books:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const renderSubscriptionStatus = () => {
+    console.log("Subscription Status:", subscription);
     if (subscription.status === 'ACTIVE') {
       return (
         <Text style={styles.active}>
-          Status: ACTIVE • Expires on {subscription.endDate}
+          {`Status: ACTIVE • Expires on (${subscription?.expiryDate || 'N/A'})`}
         </Text>
       );
     }
@@ -84,9 +73,9 @@ const HomeScreen = ({ navigation }) => {
       <FlatList
         data={books}
         numColumns={2}
-        keyExtractor={(item) => item._id} // MongoDB uses _id
-        columnWrapperStyle={{ justifyContent: 'space-between' }}
-        contentContainerStyle={{ marginTop: 16 }}
+        keyExtractor={(item, index) => item._id?.toString() || item.id?.toString() || index.toString()}
+        columnWrapperStyle={styles.columnWrapper}
+        contentContainerStyle={styles.listContent}
         onRefresh={onRefresh}
         refreshing={refreshing}
         renderItem={({ item }) => (
@@ -95,10 +84,19 @@ const HomeScreen = ({ navigation }) => {
             onPress={() => navigation.navigate('BookDetail', { bookId: item._id })}
             activeOpacity={0.8}
           >
-            {/* Note: In production, use { uri: item.imageUrl } if loading from web */}
-            <Image source={typeof item.image === 'string' ? { uri: item.image } : item.image} style={styles.image} />
-            <Text style={styles.title}>{item.title}</Text>
+            <Image 
+              source={{ uri: item.image || 'https://via.placeholder.com/150' }} 
+              style={styles.image} 
+            />
+            <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
           </TouchableOpacity>
+        )}
+        ListFooterComponent={() => (
+          <View style={styles.footerContainer}>
+            <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+              <Text style={styles.logoutText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
         )}
       />
     </View>
@@ -110,16 +108,39 @@ export default HomeScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#fff'
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   welcome: {
     fontSize: 22,
-    fontWeight: 'bold'
+    fontWeight: 'bold',
+    color: '#000',
   },
-
-  /* Subscription Status */
-  active: {
+  columnWrapper: {
+    justifyContent: 'space-between',
+  },
+  listContent: {
+    paddingBottom: 20, 
+  },
+  card: {
+    width: '48%',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 12,
+    marginBottom: 16,
+    padding: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#eee',
+    top:10
+  },
+  image: {
+    width: '100%',
+    height: 180,
+    borderRadius: 8,
+    resizeMode: 'cover'
+  },
+   active: {
     marginTop: 6,
     color: 'green',
     fontWeight: '600'
@@ -134,26 +155,29 @@ const styles = StyleSheet.create({
     color: '#555',
     fontWeight: '600'
   },
-
-  /* Book Card */
-  card: {
-    width: '48%',
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    marginBottom: 16,
-    padding: 10,
-    alignItems: 'center'
-  },
-  image: {
-    width: '100%',
-    height: 140,
-    borderRadius: 8,
-    resizeMode: 'cover'
-  },
   title: {
     marginTop: 8,
     fontSize: 14,
     fontWeight: '600',
-    textAlign: 'center'
+    textAlign: 'center',
+  },
+  footerContainer: {
+    width: '100%',
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  logoutButton: {
+    width: '100%',
+    padding: 16,
+    borderRadius: 30,
+    backgroundColor: '#FFF',
+    borderWidth: 1,
+    borderColor: '#FF3B30',
+    alignItems: 'center',
+  },
+  logoutText: {
+    color: '#FF3B30',
+    fontWeight: '700',
+    fontSize: 16
   }
 });

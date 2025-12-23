@@ -18,7 +18,6 @@ export const SubscriptionProvider = ({ children }) => {
         return;
       }
 
-      // We use the verify endpoint or a dedicated GET /subscription status endpoint
       const res = await fetch(ENDPOINTS.STATUS, {
         method: 'GET',
         headers: { Authorization: `Bearer ${token}` },
@@ -27,7 +26,7 @@ export const SubscriptionProvider = ({ children }) => {
       const data = await res.json();
       if (res.ok && data.status) {
         setSubscription({
-          status: data.status, // ACTIVE or EXPIRED
+          status: data.status,
           expiryDate: data.endDate ? new Date(data.endDate).toLocaleDateString() : null,
         });
       } else {
@@ -39,13 +38,11 @@ export const SubscriptionProvider = ({ children }) => {
     }
   };
 
-  // Run this whenever the provider mounts
   useEffect(() => {
     fetchSubscription();
   }, []);
 
   const activateSubscription = () => {
-    // Refresh from backend to get the real date
     fetchSubscription();
   };
 

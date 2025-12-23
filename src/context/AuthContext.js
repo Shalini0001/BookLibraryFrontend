@@ -9,18 +9,16 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
 
-  // Function to Login (called from Login/OTP screens)
-  const login = async (userData, token) => {
+  const login = async (userData, token, shouldSetUser = true) => {
     try {
       if (token) {
+      
         await AsyncStorage.setItem('token', token);
-
-        // Handle Notifications
         await requestNotificationPermission();
         const fcmToken = await getFcmToken();
 
         if (fcmToken) {
-          await fetch(`${API_URL}/notifications/save-token`, { // Ensure this matches your backend route
+          await fetch(`${API_URL}/notifications/save-fcm-token`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -30,7 +28,10 @@ export const AuthProvider = ({ children }) => {
           });
         }
       }
-      setUser(userData);
+
+      if (shouldSetUser) {
+        setUser(userData);
+      }
     } catch (error) {
       console.log('Login error:', error);
     }
@@ -45,34 +46,34 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Check if user is already logged in when app opens
   useEffect(() => {
-    const restoreSession = async () => {
-      try {
-        const token = await AsyncStorage.getItem('token');
-        if (token) {
-          // Fetch the real user profile from backend
-          const res = await fetch(`${API_URL}/user/profile`, {
-            method: 'GET',
-            headers: { Authorization: `Bearer ${token}` }
-          });
+ const restoreSession = async () => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    if (token) {
+      const res = await fetch(ENDPOINTS.UPDATE_PROFILE, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-          const data = await res.json();
+      const data = await res.json();
 
-          if (res.ok) {
-            // Set the actual user data (username, email, etc.)
-            setUser(data.user);
-          } else {
-            // Token expired or user deleted
-            await logout();
-          }
+      if (res.ok) {
+        if (data.user && data.user.username) {
+          setUser(data.user);
+        } else {
+          setUser(null);
         }
-      } catch (e) {
-        console.log('Session restore failed', e);
-      } finally {
-        setAuthLoading(false);
+      } else {
+        await logout();
       }
-    };
+    }
+  } catch (e) {
+    console.log('Session restore failed', e);
+  } finally {
+    setAuthLoading(false);
+  }
+};
 
     restoreSession();
   }, []);

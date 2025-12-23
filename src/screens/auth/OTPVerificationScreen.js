@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Image } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Image , Alert} from 'react-native';
 import AuthButton from '../../components/AuthButton';
 import { AuthContext } from '../../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
@@ -9,40 +9,46 @@ const OTPVerificationScreen = ({ route }) => {
   const navigation = useNavigation();
   const [otp, setOtp] = useState('');
   const { login } = useContext(AuthContext);
-  const { confirmation } = route.params;
+  const { confirmation, flow } = route.params;
 
 const verifyOtp = async () => {
   try {
-    // 1. Firebase Verification
     const result = await confirmation.confirm(otp);
     const firebaseUser = result.user;
 
-    // 2. Backend Sync
     const res = await fetch(ENDPOINTS.LOGIN, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ firebaseUid: firebaseUser.uid })
-    }).catch(err => {
-      // This catches the "Network Request Failed"
-      throw new Error("SERVER_NETWORK_ERROR");
+      body: JSON.stringify({ 
+        firebaseUid: firebaseUser.uid,
+        phone: firebaseUser.phoneNumber,
+        flow: flow
+      })
     });
 
-    if (!res.ok) {
-       const errorData = await res.json();
-       alert(errorData.message || "Backend Error");
-       return;
-    }
+    const data = await res.json();
 
-    const { token } = await res.json();
-    login({ uid: firebaseUser.uid }, token);
-    navigation.navigate('RegisterUser');
+    if (res.ok) {
+      if (data.isNewUser === false) {
+        if (flow === 'signup') {
+            Alert.alert(
+              "Already Registered", 
+              "This number is already registered. Please go to the Login screen.",
+              [{ text: "Go to Login", onPress: () => navigation.navigate('Login') }]
+            );
+            return;
+        }
 
-  } catch (err) {
-    if (err.message === "SERVER_NETWORK_ERROR") {
-      alert("Cannot connect to server. Please check if backend is running.");
+        login(data.user, data.token, true); 
+      } else {
+        await login({ uid: firebaseUser.uid }, data.token, false); 
+        navigation.replace('RegisterUser'); 
+      }
     } else {
-      alert('Invalid OTP code');
+      console.log("Login Failed:", data.message);
     }
+  } catch (err) {
+    Alert.alert("Error", "Invalid OTP");
   }
 };
 
@@ -57,7 +63,7 @@ const verifyOtp = async () => {
       </View>
       <Text style={styles.title}>Verify OTP</Text>
       <Text style={styles.subTitle}>
-        Enter the OTP sent to your email/mobile
+        Enter the OTP sent to your mobile
       </Text>
 
       <TextInput

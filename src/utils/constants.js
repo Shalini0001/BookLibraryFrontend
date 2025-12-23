@@ -1,5 +1,4 @@
-// constants.js
-export const BASE_URL = 'http://10.120.171.41:5000'; 
+export const BASE_URL = 'http://10.120.171.53:5000';
 
 export const API_URL = `${BASE_URL}`;
 

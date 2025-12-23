@@ -1,37 +1,36 @@
-import React, { useEffect } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AuthContext } from '../context/AuthContext';
 
 const SplashScreen = ({ navigation }) => {
-  useEffect(() => {
-  const checkAuth = async () => {
-    const token = await AsyncStorage.getItem('token');
+  const { authLoading, user } = useContext(AuthContext);
 
-    setTimeout(() => {
-      if (token) {
-        navigation.replace('Home');
-      } else {
-        navigation.replace('Signup');
-      }
-    }, 2500);
-  };
-  checkAuth();
-}, []);
+  useEffect(() => {
+    // const checkAuth = async () => {
+    //   const token = await AsyncStorage.getItem('token');
+
+    //   setTimeout(() => {
+    //     if (token) {
+    //       navigation.replace('Home');
+    //     } else {
+    //       navigation.replace('Signup');
+    //     }
+    //   }, 2500);
+    // };
+    // checkAuth();
+  }, [authLoading]);
 
 
   return (
     <View style={styles.container}>
-      {/* Logo */}
       <Image
         source={require('../assets/images/logo.png')}
-         style={styles.logo}
-         resizeMode="contain"
+        style={styles.logo}
+        resizeMode="contain"
       />
-
-      {/* App Name */}
       <Text style={styles.title}>Domato Book Co.</Text>
 
-      {/* Tagline (optional) */}
       <Text style={styles.subtitle}>
         Read • Subscribe • Enjoy
       </Text>
@@ -50,7 +49,8 @@ const styles = StyleSheet.create({
   },
   logo: {
     width: 120,
-    height: 120,  },
+    height: 120,
+  },
   title: {
     fontSize: 32,
     fontWeight: 'bold',

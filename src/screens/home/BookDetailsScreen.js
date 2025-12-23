@@ -6,7 +6,8 @@ import {
   StyleSheet,
   Image,
   ScrollView,
-  ActivityIndicator
+  ActivityIndicator,
+  SafeAreaView
 } from 'react-native';
 import { SubscriptionContext } from '../../context/SubscriptionContext';
 import { ENDPOINTS } from '../../utils/constants';
@@ -22,10 +23,14 @@ const BookDetailScreen = ({ route, navigation }) => {
   }, []);
 
   const fetchBookDetails = async () => {
+    if (!bookId) return;
     try {
       const response = await fetch(ENDPOINTS.GET_BOOK_DETAILS(bookId));
-      const data = await response.json();
-      setBook(data);
+      const contentType = response.headers.get("content-type");
+      if (response.ok && contentType && contentType.includes("application/json")) {
+        const data = await response.json();
+        setBook(data);
+      }
     } catch (error) {
       console.error("Error fetching book details:", error);
     } finally {
@@ -38,26 +43,44 @@ const BookDetailScreen = ({ route, navigation }) => {
   const isActive = subscription.status === 'ACTIVE';
 
   return (
-    <ScrollView style={styles.container}>
-      <Image source={{ uri: book?.image }} style={styles.image} />
-      <Text style={styles.title}>{book?.title}</Text>
-      <Text style={styles.author}>By {book?.author || 'Unknown Author'}</Text>
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+      {/* Floating Back Button */}
+      <TouchableOpacity 
+        style={styles.backButton} 
+        onPress={() => navigation.goBack()}
+      >
+        <Image source={require('../../assets/images/backArrow.png')} style={[styles.backButtonImage, { tintColor: '#fff' }]} />
+       
+      </TouchableOpacity>
 
-      <Text style={styles.description}>{book?.description}</Text>
+      <ScrollView style={styles.container} bounces={false}>
+        <Image
+          source={
+            typeof book?.image === 'string'
+              ? { uri: book.image }
+              : book?.image
+          }
+         
+          style={styles.image}
+        />
+        
+        <View style={styles.contentContainer}>
+          <Text style={styles.title}>{book?.title}</Text>
+          <Text style={styles.author}>By {book?.author || 'Unknown Author'}</Text>
+          <Text style={styles.description}>{book?.description}</Text>
 
-      {!isActive ? (
-        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Payment')}>
-          <Text style={styles.buttonText}>Unlock Full Access – ₹99</Text>
-        </TouchableOpacity>
-      ) : (
-        <View style={styles.accessBox}>
-          <Text style={styles.success}>🎉 Premium Access Active</Text>
-          <TouchableOpacity style={[styles.button, { marginTop: 15, width: '100%' }]}>
-            <Text style={styles.buttonText}>Read Now</Text>
-          </TouchableOpacity>
+          {!isActive ? (
+            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Payment')}>
+              <Text style={styles.buttonText}>Unlock Full Access – ₹99</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.accessBox}>
+              <Text style={styles.success}>You have access to premium books 🎉</Text>
+            </View>
+          )}
         </View>
-      )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
@@ -66,36 +89,63 @@ export default BookDetailScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff'
+  },
+  backButton: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    zIndex: 10,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
   },
   image: {
     width: '100%',
-    height: 250,
-    resizeMode: 'cover'
+    height: 350,
+    resizeMode: 'contain'
+  },
+  contentContainer: {
+    paddingBottom: 40,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginTop: 16,
+    marginTop: 20,
+    paddingHorizontal: 20,
+    color: '#333'
+  },
+  author: {
+    fontSize: 16,
+    color: '#777',
+    marginTop: 4,
     paddingHorizontal: 20
   },
   description: {
-    fontSize: 15,
-    color: '#555',
-    lineHeight: 22,
-    marginTop: 10,
+    fontSize: 16,
+    color: '#444',
+    lineHeight: 24,
+    marginTop: 15,
     paddingHorizontal: 20
   },
   button: {
     backgroundColor: '#000',
     paddingVertical: 16,
     borderRadius: 30,
-    margin: 20
+    margin: 20,
+    marginTop: 30
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     textAlign: 'center'
   },
   accessBox: {
@@ -103,16 +153,19 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#E8F5E9',
     borderRadius: 12,
-    alignItems: 'center'
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#C8E6C9'
   },
   success: {
     color: '#2E7D32',
-    fontSize: 16,
-    fontWeight: 'bold'
+    fontSize: 15,
+    fontWeight: 'bold',
+    textAlign: 'center'
   },
-  subText: {
-    marginTop: 6,
-    fontSize: 14,
-    color: '#388E3C'
+  backButtonImage:{
+    width: 30,
+    height: 30,
+    tintColor: '#fff'
   }
 });

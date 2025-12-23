@@ -1,12 +1,12 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, } from 'react';
 import {
     View,
     Text,
     TextInput,
     StyleSheet,
     TouchableOpacity,
-    ScrollView
+    ScrollView, Alert
 } from 'react-native';
 import { AuthContext } from '../../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,25 +19,46 @@ const RegisterUserScreen = ({ }) => {
     const [month, setMonth] = useState('');
     const [day, setDay] = useState('');
     const [year, setYear] = useState('');
-    const [pronoun, setPronoun] = useState('');
+    // const [pronoun, setPronoun] = useState('');
     const [errors, setErrors] = useState({ email: '', username: '', dob: '' });
     const [isFormValid, setIsFormValid] = useState(false);
     const { login } = useContext(AuthContext);
 
-    const onContinue = async () => {
-        if (!isFormValid) return;
+ const onContinue = async () => {
+    if (!isFormValid) return;
 
-        await fetch(ENDPOINTS.UPDATE_PROFILE, {
+    try {
+        const token = await AsyncStorage.getItem('token');
+        
+        const res = await fetch(ENDPOINTS.UPDATE_PROFILE, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${await AsyncStorage.getItem('token')}`
+                'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ email, username, dob: `${year}-${month}-${day}` })
+            body: JSON.stringify({ 
+                email, 
+                username, 
+                dob: `${year}-${month}-${day}` 
+            })
         });
 
-        login({ email, username }, await AsyncStorage.getItem('token'));
-    };
+        const data = await res.json();
+        
+        // DEBUG: Ensure this logs an object that contains the new username
+        console.log("Profile Update Response:", data); 
+
+        if (res.ok && data.user) {
+         
+            login(data.user, token, true);
+        } else {
+            Alert.alert(data.message || "Failed to update profile.");
+        }
+    } catch (error) {
+        console.error("Update Error:", error);
+        Alert.alert("An error occurred. Please check your connection.");
+    }
+};
 
 
     useEffect(() => {
@@ -92,10 +113,8 @@ const RegisterUserScreen = ({ }) => {
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            {/* Header */}
+        
             <Text style={styles.title}>Tell us about yourself</Text>
-
-            {/* Email */}
             <Text style={styles.label}>Email</Text>
             <TextInput
                 placeholder="Email"
@@ -106,7 +125,6 @@ const RegisterUserScreen = ({ }) => {
             />
             {!!errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
 
-            {/* Username */}
             <Text style={styles.label}>Username</Text>
             <TextInput
                 placeholder="Username"
@@ -120,7 +138,6 @@ const RegisterUserScreen = ({ }) => {
                 name to protect your privacy.
             </Text>
 
-            {/* Birthday */}
             <Text style={styles.label}>When's your birthday?</Text>
             <View style={styles.row}>
                 <TextInput
@@ -154,7 +171,7 @@ const RegisterUserScreen = ({ }) => {
             </Text>
 
             {/* Pronouns */}
-            <Text style={styles.label}>Pronouns (optional)</Text>
+            {/* <Text style={styles.label}>Pronouns (optional)</Text>
             <TextInput
                 placeholder="Pronouns (optional)"
                 style={styles.input}
@@ -163,9 +180,8 @@ const RegisterUserScreen = ({ }) => {
             />
             <Text style={styles.helperText}>
                 Your pronouns are only visible to you and Domato’s support team.
-            </Text>
+            </Text> */}
 
-            {/* Continue Button */}
             <TouchableOpacity
                 style={[styles.button, !isFormValid && styles.buttonDisabled]}
                 onPress={onContinue}
