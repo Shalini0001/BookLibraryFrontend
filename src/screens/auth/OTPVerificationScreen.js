@@ -18,7 +18,9 @@ const verifyOtp = async () => {
 
     const res = await fetch(ENDPOINTS.LOGIN, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true',
+       },
       body: JSON.stringify({ 
         firebaseUid: firebaseUser.uid,
         phone: firebaseUser.phoneNumber,

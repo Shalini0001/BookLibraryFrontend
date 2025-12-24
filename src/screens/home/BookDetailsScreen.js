@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SubscriptionContext } from '../../context/SubscriptionContext';
 import { ENDPOINTS } from '../../utils/constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BookDetailScreen = ({ route, navigation }) => {
   const { bookId } = route.params;
@@ -22,21 +23,34 @@ const BookDetailScreen = ({ route, navigation }) => {
     fetchBookDetails();
   }, []);
 
-  const fetchBookDetails = async () => {
-    if (!bookId) return;
-    try {
-      const response = await fetch(ENDPOINTS.GET_BOOK_DETAILS(bookId));
-      const contentType = response.headers.get("content-type");
-      if (response.ok && contentType && contentType.includes("application/json")) {
-        const data = await response.json();
-        setBook(data);
+const fetchBookDetails = async () => {
+  if (!bookId) return;
+  try {
+    const token = await AsyncStorage.getItem('token');
+
+    const response = await fetch(ENDPOINTS.GET_BOOK_DETAILS(bookId), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true', 
+        ...(token && { 'Authorization': `Bearer ${token}` })
       }
-    } catch (error) {
-      console.error("Error fetching book details:", error);
-    } finally {
-      setLoading(false);
+    });
+
+    const contentType = response.headers.get("content-type");
+    
+    if (response.ok && contentType && contentType.includes("application/json")) {
+      const data = await response.json();
+      setBook(data);
+    } else {
+      console.log("Response not OK or not JSON. Status:", response.status);
     }
-  };
+  } catch (error) {
+    console.error("Error fetching book details:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (loading) return <ActivityIndicator style={{ flex: 1 }} />;
 

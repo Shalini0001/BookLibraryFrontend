@@ -1,4 +1,5 @@
-export const BASE_URL = 'http://10.120.171.53:5000';
+// export const BASE_URL = 'http://10.120.171.1:5000';
+export const BASE_URL = 'https://corliss-fadable-allusively.ngrok-free.dev';
 
 export const API_URL = `${BASE_URL}`;
 

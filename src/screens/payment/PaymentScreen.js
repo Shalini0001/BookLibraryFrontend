@@ -24,6 +24,7 @@ const PaymentScreen = ({ navigation }) => {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true',
           'Content-Type': 'application/json'
         }
       });
@@ -37,6 +38,7 @@ const PaymentScreen = ({ navigation }) => {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
+           'ngrok-skip-browser-warning': 'true',
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({

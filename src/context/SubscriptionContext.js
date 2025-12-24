@@ -20,7 +20,7 @@ export const SubscriptionProvider = ({ children }) => {
 
       const res = await fetch(ENDPOINTS.STATUS, {
         method: 'GET',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true', },
       });
 
       const data = await res.json();

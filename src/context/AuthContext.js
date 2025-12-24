@@ -22,7 +22,8 @@ export const AuthProvider = ({ children }) => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`
+              Authorization: `Bearer ${token}`,
+              'ngrok-skip-browser-warning': 'true',
             },
             body: JSON.stringify({ fcmToken })
           });
@@ -53,7 +54,7 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       const res = await fetch(ENDPOINTS.UPDATE_PROFILE, {
         method: 'GET',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true', }
       });
 
       const data = await res.json();

@@ -88,10 +88,28 @@ android {
     }
     signingConfigs {
         debug {
-            storeFile file('debug.keystore')
+            storeFile file('debug.keystore') // Use relative path if file is in android/app
             storePassword 'android'
             keyAlias 'androiddebugkey'
             keyPassword 'android'
+        }
+        release {
+            // Fix: Point this to your actual production keystore file
+            storeFile file('KeyStore') 
+            storePassword 'DomatoBook'
+            keyAlias 'DomatoBook'
+            keyPassword 'DomatoBook'
+        }
+    }
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+        release {
+            // FIX: Change this from .debug to .release
+            signingConfig signingConfigs.release 
+            minifyEnabled enableProguardInReleaseBuilds
+            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
     buildTypes {

@@ -37,7 +37,11 @@ const HomeScreen = ({ navigation }) => {
 
 const fetchBooks = async () => {
   try {
-    const response = await fetch(ENDPOINTS.GET_BOOKS);
+    const response = await fetch(ENDPOINTS.GET_BOOKS, {
+      headers: {
+        'ngrok-skip-browser-warning': 'true' // ADD THIS
+      }
+    });
     const data = await response.json();
 
     setBooks(data); 
